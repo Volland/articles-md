@@ -1,8 +1,8 @@
 Graphs and vector search form a powerful tandem for AI-powered applications, which are booming nowadays. Personal knowledge graphs are the core of semantic memory for many agentic AI applications.
 
-At Mykin, we craft AI agentic architecture with a complex memory model directly on the user's device.
+At kin, we craft AI agentic architecture with a complex memory model directly on the user's device.
 
-[Mykin](https://mykin.ai/) is a privacy-focused AI agent on top of sovereign data owned by users.
+[Kin](https://mykin.ai/) is a privacy-focused AI agent on top of sovereign data owned by users.
 
 ## [#](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/blog/personal-knowledge-graphs-in-ai-rag-on-mobile#our-north-stars)Our North Stars
 
@@ -16,9 +16,9 @@ The technical North stars of mykin are :
 
 ![](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/images/blog/personal-knowledge-graphs-in-ai-rag-on-mobile/data-ownership.png)
 
-All these North stars have one aspect in common—data ownership. The user has full control and ownership of the data. This means that we shift from a classical all-in-cloud centralized model to a local-first architecture where data is stored and processed, a mesh of user devices, and potentially some cloud services or capabilities are involved.
+All these North stars have one aspect in common—data ownership. The user has full control and ownership of the data. This means we shift from a classical all-in-cloud centralized model to a local-first architecture where data is stored and processed, a mesh of user devices, and potentially some cloud services or capabilities are involved.
 
-So we need to run complex RAG, vector search, and vector graph clustering primarily on the user's device.
+So, we need to run complex RAG, vector search, and vector graph clustering primarily on the user's device.
 
 ### [#](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/blog/personal-knowledge-graphs-in-ai-rag-on-mobile#expectations-for-database-capabilities)Expectations for Database Capabilities
 
