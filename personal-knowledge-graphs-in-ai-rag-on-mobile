@@ -1,0 +1,237 @@
+Graphs and vector search form a powerful tandem for AI-powered applications, which are booming nowadays. Personal knowledge graphs are the core of semantic memory for many agentic AI applications.
+
+At Mykin, we craft AI agentic architecture with a complex memory model directly on the user's device.
+
+[Mykin](https://mykin.ai/) is a privacy-focused AI agent on top of sovereign data owned by users.
+
+## [#](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/blog/personal-knowledge-graphs-in-ai-rag-on-mobile#our-north-stars)Our North Stars
+
+The technical North stars of mykin are :
+
+-   [Privacy by design](https://volodymyrpavlyshyn.medium.com/privacy-by-desing-and-laws-of-ide-991c80170d35) — guide on how to keep architecture secure and private
+-   [ssi principles](https://volodymyrpavlyshyn.medium.com/self-sovereign-identity-in-7-toots-c29fff0f7961) — focus on user data ownership and sovereignty
+-   [local first architecture](https://volodymyrpavlyshyn.medium.com/business-benefits-of-local-first-for-founders-and-products-f212367b3537) — give the instrument to the user to own data and compute independently from the vendor
+
+### [#](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/blog/personal-knowledge-graphs-in-ai-rag-on-mobile#data-ownership)Data Ownership
+
+![](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/images/blog/personal-knowledge-graphs-in-ai-rag-on-mobile/data-ownership.png)
+
+All these North stars have one aspect in common—data ownership. The user has full control and ownership of the data. This means that we shift from a classical all-in-cloud centralized model to a local-first architecture where data is stored and processed, a mesh of user devices, and potentially some cloud services or capabilities are involved.
+
+So we need to run complex RAG, vector search, and vector graph clustering primarily on the user's device.
+
+### [#](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/blog/personal-knowledge-graphs-in-ai-rag-on-mobile#expectations-for-database-capabilities)Expectations for Database Capabilities
+
+-   general queries on structured data (regular application data) like messages, conversations, settings, etc
+-   vector search and similarity search capabilities to RAG pipelines and different LLM and ML-powered flows
+-   Graph and graph search capabilities (ML and semantic memory )
+
+As far as we work on mobile, we have a few tech capabilities, too;
+
+-   embeddable with good support for mobile bindings
+-   single file database that simplifies a backup
+-   portable
+-   battery friendly
+-   fast and nonblocking io as much as possible
+-   wide community support
+-   reliability
+
+### [#](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/blog/personal-knowledge-graphs-in-ai-rag-on-mobile#libsql)libSQL
+
+If you follow my articles, you already know the answer — [libSQL](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/libsql).
+
+I described the full journey of vector search and graphs on top of relational models [in my articles](https://ai.plainenglish.io/personal-knowledge-graphs-in-ai-rag-powered-applications-with-libsql-50b0e7aa10c4).
+
+We have 1 question — how to run libSQL on a user device?
+
+We are using React Native, so the library should have react native bindings.
+
+## [#](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/blog/personal-knowledge-graphs-in-ai-rag-on-mobile#libsql-on-react-native)libSQL on React Native
+
+There are plenty of libraries for React Native that run SQLite, but not LibSQL. Let's take a look at some of the most popular ones:
+
+#### [#](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/blog/personal-knowledge-graphs-in-ai-rag-on-mobile#react-native-sqlite-storage)react-native-sqlite-storage
+
+-   Widely used with support for transactions and raw SQL queries.
+-   Supports both Android and iOS.
+-   Provides a promise-based API.
+
+#### [#](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/blog/personal-knowledge-graphs-in-ai-rag-on-mobile#react-native-sqlite-2)react-native-sqlite-2
+
+-   A lightweight alternative.
+-   Based on a WebSQL API.
+-   Works well for simple databases but has limited features compared to `react-native-sqlite-storage`.
+
+#### [#](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/blog/personal-knowledge-graphs-in-ai-rag-on-mobile#react-native-sqlite)react-native-sqlite
+
+-   Similar to `react-native-sqlite-storage`, but with more minimalistic features.
+-   Might require manual linking.
+
+#### [#](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/blog/personal-knowledge-graphs-in-ai-rag-on-mobile#watermelondb)watermelondb
+
+-   Built on top of SQLite but offers a more modern approach.
+-   Designed for highly scalable databases in React Native.
+-   Provides an ORM-like interface and works with large datasets efficiently.
+
+#### [#](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/blog/personal-knowledge-graphs-in-ai-rag-on-mobile#expo-sqlite--if-using-expo-)expo-sqlite (if using Expo)
+
+-   Built-in SQLite support for Expo apps.
+-   It is lightweight and easy to use but has fewer advanced features than other libraries.
+
+`expo-sqlite` is now a de facto library for SQLite in the Expo ecosystem, and my first idea was to convince the community to add libSQL as an engine or fork it and use it for our internal needs.
+
+It was much more challenging than I expected. Sometimes, a large open-source project can be resistant to new ideas and improvements. So it is a door that is hard to nook.
+
+### [#](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/blog/personal-knowledge-graphs-in-ai-rag-on-mobile#op-sqlite)OP-SQLite
+
+When I first found OP-SQL on GitHub, it was described as the fastest SQLite library for React Native, developed by Ospfranco.
+
+![](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/images/blog/personal-knowledge-graphs-in-ai-rag-on-mobile/op-sqlite.png)
+
+It has few interesting features for react native app:
+
+#### [#](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/blog/personal-knowledge-graphs-in-ai-rag-on-mobile#async-operations)Async Operations
+
+The default query runs synchronously on the JS thread. There are async versions for some of the operations. This will offload the SQLite processing to a different thread and prevent UI blocking. It is also real multi-concurrency, so it won’t bog down the event loop.
+
+#### [#](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/blog/personal-knowledge-graphs-in-ai-rag-on-mobile#raw-execution)Raw Execution
+
+If you don’t care about the keys you can use a simplified execution that will return an array of results.
+
+#### [#](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/blog/personal-knowledge-graphs-in-ai-rag-on-mobile#hooks)Hooks
+
+You can subscribe to changes in your database by using an update hook that give a full row :
+
+```ts
+// Bear in mind: rowId is not your table primary key but the internal rowId sqlite uses // to keep track of the table rows db.updateHook(({ rowId, table, operation, row = {} }) => { console.warn(`Hook has been called, rowId: ${rowId}, ${table}, ${operation}`); // Will contain the entire row that changed // only on UPDATE and INSERT operations console.warn(JSON.stringify(row, null, 2)); }); db.execute('INSERT INTO "User" (id, name, age, networth) VALUES(?, ?, ?, ?)', [ id, name, age, networth, ]);
+```
+
+#### [#](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/blog/personal-knowledge-graphs-in-ai-rag-on-mobile#extension-load)Extension Load
+
+It was the first library that allowed me to load an extension by myself and even more. Oskar adds CR-SQL extension as an option to a library to make it work out of the box !!!
+
+#### [#](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/blog/personal-knowledge-graphs-in-ai-rag-on-mobile#open-to-cooperation)Open to Cooperation
+
+One of LibSQL's mottos is to be open to contributions. Oskar was more open to contributions, saw the amazing benefits of libSQL, and added it as an option to op-sql.
+
+### [#](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/blog/personal-knowledge-graphs-in-ai-rag-on-mobile#let-s-learn-how-to-use-op-sqlite)Let's Learn How to Use OP-SQLite
+
+So, how do you build a vector search-aware personal knowledge graph on a user device?
+
+I expect that you will have a React native or expo project. You need to add `op-sql` (7.3.0+):
+
+```bash
+npm install @op-engineering/op-sqlite
+```
+
+Now let's configure Libsql. You need to add this section to your `package.json`:
+
+```json
+"op-sqlite": { "libsql": true }
+```
+
+Since we're working with a polymorphic library that runs not only on the device but also on Node.js, I made an abstraction that allows me to swap libSQL implementations.
+
+```ts
+import { open as openLibsql, OPSQLiteConnection, QueryResult, Transaction, } from '@op-engineering/op-sqlite'; import { BatchQueryOptions, DataQuery, DataQueryResult, IDataStore, UpdateCallbackParams, StoreOptions, } from '@mykin-ai/kin-core'; import { documentDirectory } from 'expo-file-system'; export class DataStoreService implements IDataStore { private _db: OPSQLiteConnection | undefined; private _isOpen = false; public _name: string; private _location: string; public useCrSql = true; private _options: StoreOptions; constructor( name = ':memory:', location = documentDirectory, options: StoreOptions = { vectorDimension: 512, vectorType: 'F32', vectorNeighborsCompression: 'float8', vectorMaxNeighbors: 20, dataAutoSync: false, failOnErrors: false, reportErrors: true, }, ) { this._name = name; this._options = options; if (location?.startsWith('file://')) { this._location = location.split('file://')[1]; } else { this._location = location; } if (this._location.endsWith('/')) { this._location = this._location.slice(0, -1); } } getVectorOption() { return { dimension: this._options.vectorDimension, type: this._options.vectorType, compression: this._options.vectorNeighborsCompression, maxNeighbors: this._options.vectorMaxNeighbors, }; } async query( query: string, params?: any[] | undefined, ): Promise<DataQueryResult> { try { await this.open(this._name); const paramsWithCorrectTypes = params?.map((param) => { if (param === undefined || param === null) { return null; } if (param === true) { return 1; } if (param === false) { return 0; } return param; }); const data = await this._db.executeRawAsync( query, paramsWithCorrectTypes, ); return { isOk: true, data, }; } catch (e) { console.error(e.code, e.message); return { isOk: false, data: [], errorCode: e.code || 'N/A', error: e.message, }; } } async execute( query: string, params?: any[] | undefined, ): Promise<DataQueryResult> { try { await this.open(this._name); const paramsWithCorrectTypes = params?.map((param) => { if (param === undefined || param === null) { return null; } if (param === true) { return 1; } if (param === false) { return 0; } return param; }); const data = await this._db.executeAsync(query, paramsWithCorrectTypes); return { isOk: true, data: data.rows?._array ?? [], }; } catch (e) { console.error(e); return { isOk: false, data: [], errorCode: e.code || 'N/A', error: e.message, }; } } async open(name: string): Promise<boolean> { try { if (this._isOpen && name === this._name) { return true; } if (this._isOpen && name !== this._name) { await this.close(); this._isOpen = false; } this._name = name; this._db = openLibsql({ name: this._name, location: this._location, }); console.log('Opened db'); this._isOpen = true; return true; } catch (e) { // eslint-disable-next-line no-console console.error("couldn't open db", e); return false; } } async isOpen(): Promise<boolean> { return Promise.resolve(this._isOpen); } async close(): Promise<boolean> { if (this.useCrSql) { this._db.execute(`select crsql_finalize();`); } this._db.close(); this._isOpen = false; return Promise.resolve(true); } }
+```
+
+Now we are ready to make graph tables and indexes. I'll skip the entire class as far it is too long and give only essential parts:
+
+```ts
+const vectorOptions = this.\_store.getVectorOption()
+```
+
+Give us vector configurations, such as the type of vector value and the dimension of embeddings, as the same as vector index params:
+
+```ts
+const createR = await this.\_store.execute(` create table if not exists edge ( id varchar(36) primary key not null, fromId varchar(36) not null default '', toId varchar(36) not null default '', label varchar not null default '', displayLabel varchar not null default '', vectorTriple ${vectorOptions.type}_BLOB(${vectorOptions.dimension}), createdAt real, updatedAt real, source varchar(36) default 'N/A', type varchar default 'edge', meta text default '{}' ); `)
+```
+
+Now we have a triple store that has references to nodes:
+
+```ts
+const createR = await this.\_store.execute(` create table if not exists node ( id varchar(36) primary key not null, label varchar not null default '', vectorLabel ${vectorOptions.type}_BLOB(${vectorOptions.dimension}), displayLabel varchar not null default '', createdAt real, updatedAt real, source varchar(36) default 'N/A', type varchar default 'node', entity text default '{}', meta text default '{}' ); `)
+```
+
+If you want to know how to model graphs in relational databases, [read this](https://blog.stackademic.com/personal-knowledge-graphs-semantic-entity-persistence-in-relational-model-d5692bb8e8bb).
+
+#### [#](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/blog/personal-knowledge-graphs-in-ai-rag-on-mobile#now-it-s-time-to-create-an-index-)Now it's time to create an index:
+
+```ts
+const createIndex = await this.\_store.execute(` CREATE INDEX IF NOT EXISTS idx_edge_vectorTriple ON edge (libsql_vector_idx(vectorTriple${vectorOptions.compression !== 'none' ? `, 'compress_neighbors=${vectorOptions.compression}'` : ''} ${vectorOptions.maxNeighbors ? `, 'max_neighbors=${vectorOptions.maxNeighbors}'` : ''})); `)
+```
+
+We configure compress\_neighbors and max\_neighbors to get the best storage space footprint. if you want to learn more about space complexity, [read this](https://ai.plainenglish.io/the-space-complexity-of-vector-search-indexes-in-libsql-3fadb0cdee96).
+
+Now, we could create a triple:
+
+```ts
+const createOp = await this._store.execute( ` insert into edge (id, fromId, toId , label, vectorTriple, displayLabel, createdAt, updatedAt) values (?, ? , ? , ? , vector(${this._store.toVector( await this.embeddingsService.embedDocument( `${fromNode.label} ${normalizedLabel} ${toNode.label}`, ), )}) , ? , ?, ?); `, [ this._getUuid(), fromNode.id, toNode.id, normalizedLabel, label, Date.now(), Date.now(), ], );
+```
+
+Unfortunately, `op-sql` does not support `float32array` as a parameter as libSQL does. To make a workaround, we need to use a bit of dynamic SQL and create a serialized vector as part of queries. My toVector method does a stringify of float32array and cares about quotes. Please note that we pass a serialized array to a vector function in SQL. I hope that the next version of op-SQL will support float32arrays
+
+### [#](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/blog/personal-knowledge-graphs-in-ai-rag-on-mobile#time-to-query-)Time to query:
+
+```ts
+const _top = top ?? 10 const vector = this._store.toVector(await this.embeddingsService.embedQuery(query)) const querySql = ` select e.id, e.label, e.displayLabel, e.createdAt, e.updatedAt, e.source, e.type , e.meta , fn.label, fn.displayLabel, tn.label, tn.displayLabel, vector_distance_cos(e.vectorTriple , ${vector}) distance from vector_top_k('idx_edge_vectorTriple', ${vector} , ${_top}) as i inner join edge as e on i.id = e.rowid inner join node as fn on e.fromId = fn.id inner join node as tn on e.toId = tn.id where 1=1 ${maxDistance ? `and distance <= ${maxDistance}` : ''} order by distance limit ${_top}; ` const edgeData = await this.\_store.query(querySql)
+```
+
+Few notes
+
+-   by default, the vector index works and returns rowid so be careful that the joins
+-   index does not return distance. Still, you could calculate it if you needed
+-   `vector_top_k` expect top parameter and will return top N items. If you have complex filtering or external top limitations, remember to set a much bigger top N to make the search possible. In our case it is not an issue.
+
+## [#](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/blog/personal-knowledge-graphs-in-ai-rag-on-mobile#issues-and-challenges)Issues and Challenges
+
+I faced a few challenges in React Native, mainly for iOS. They are related to how native modules are compiled and linked in iOS.
+
+One quite unpleasant issue is that if you have another library using a different version of SQLite, it could unpredictably override linking and break libSQL completely.
+
+### [#](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/blog/personal-knowledge-graphs-in-ai-rag-on-mobile#compilation-clashes)Compilation Clashes
+
+If you have other packages that are dependent on sqlite (specially if they compile it from source) you will have issues.
+
+Some of the known offenders are:
+
+-   `expo-updates`
+-   `expo-sqlite`
+-   `cozodb`
+
+You will face duplicated symbols and/or header definitions since each of the packages will try to compile SQLite from sources. Even if they manage to compile, they might compile sqlite with different compilation flags and you might face threading errors.
+
+Unfortunately, there is no easy solution. It would be best if you got rid of the double compilation by hand, either by patching the compilation of each package so that it still builds or removing the dependency on the package.
+
+On Android you might be able to get away by just using a pickFirst strategy ([here is an article](https://ospfranco.com/how-to-resolve-duplicated-libraries-on-android/) on how to do that). On iOS depending on the build system you might be able to patch it via a post-build hook, something like:
+
+```
+pre_install do |installer|
+ installer.pod_targets.each do |pod|
+  if pod.name.eql?('expo-updates')
+   # Modify the configuration of the pod so it doesn't depend on the sqlite pod
+  end
+ end
+end
+```
+
+Follow [op-sql docs](https://ospfranco.notion.site/Gotchas-bedf4f3e9dc1444480fc687d8917751a) to get an updated list of libs.
+
+### [#](https://frontend-git-blog-ai-rag-mobile-chiselstrike.vercel.app/blog/personal-knowledge-graphs-in-ai-rag-on-mobile#rnrestart-crash)RNRestart crash
+
+One more iOS issue:
+
+```ts
+import RNRestart from 'react-native-restart';
+```
+
+If you for some reasons need to restart app and use react-native-restart you need to make that you close all connections
+
+```ts
+import { closeAllConnections } from '@storage/data-store-factory'; import RNRestart from 'react-native-restart'; export const restartApplication = async (): Promise<void> => { await closeAllConnections(); RNRestart.restart(); };
+```
+
+Now you could also do a personal knowledge graph with vector search on a user device!
+
+I want to say thanks to Oskar, and Turso team for their amazing work.
