@@ -1,10 +1,8 @@
-# Personal Knowledge Graphs for RAG on Mobile
+# Building Vector Search and Personal Knowledge Graphs on Mobile with libSQL and React Native
 
 Graphs and vector search form a powerful combination for AI-powered applications, which are rapidly growing in popularity. Personal knowledge graphs serve as the foundation of semantic memory for many agent-based AI applications.
 
-At Kin, we develop AI agent-based architecture with a sophisticated memory model that is stored directly on the user's device.
-
-[Kin](https://mykin.ai/) is a personal AI built on local-first and privacy-first principles, available on both iOS and Android.
+At [Kin](https://mykin.ai/), we develop AI agent-based architecture with a sophisticated memory model that is stored directly on the user's device. Kin is a personal AI that helps you navigate your work-life, available on both iOS and Android.
 
 ## Our Guiding Principles
 
@@ -389,5 +387,9 @@ export const restartApplication = async (): Promise<void> => {
 ```
 
 Now, you can create a personal knowledge graph with vector search on a user device!
+
+## Sounds interesting?
+
+If this sounds interesting and you’d like to work with us on these exciting projects, please reach out at jobs@mykin.ai!
 
 I want to extend my thanks to Oskar and the Turso team for their incredible work.
