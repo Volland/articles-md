@@ -1,6 +1,6 @@
 # Personal Knowledge Graphs in AI RAG-powered Applications with libSQL
 
-I’ve spent a lot of time working on a privacy-first personal AI assistant at [mykin.ai](mykin.ai).
+I’ve spent a lot of time working on a privacy-first personal AI assistant at [Kin](mykin.ai). Kin is a personal AI that helps you navigate your work-life, available on both iOS and Android.
 
 Our app is local-first and focused on the users' sovereign data ownership. A key challenge we faced was finding the right way to store that data securely.
 
@@ -179,4 +179,7 @@ Now, we have vector search capabilities on top of our personal knowledge graph!
 ## Conclusion
 
 Personal Knowledge Graphs can be modeled in a relational model, and since they are usually middle-sized, they don’t cause significant performance issues with SQL queries. With LibSQL, we now have native, low-level support for vectors. This allows us to build graph clustering and RAG pipelines on user devices if needed. The feature is still under active development and may require further refinement, but in my experience, it is already stable.
-Collapse
+
+## Sounds interesting?
+
+If this sounds interesting and you’d like to work with us on these exciting projects, please reach out at jobs@mykin.ai!
