@@ -1,6 +1,6 @@
 # The Space Complexity of Vector Indexes in LibSQL
 
-Hi! I'm continuing my exploration into vector search and graph clustering at [Kin](https://mykin.ai). Kin is a personal AI that helps you navigate your work-life, available on both iOS and Android.
+In this post, I'm continuing my exploration into vector search and graph clustering at [Kin](https://mykin.ai). Kin is a personal AI that helps you navigate your work-life, available on both iOS and Android.
 
 In my previous posts, I outlined our challenges and journey with libSQL: 
 
