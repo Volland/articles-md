@@ -147,3 +147,5 @@ In practice, many systems combine both strategies, depending on the query. For e
 ## **Conclusion**
 
 Vector search with metadata filtering offers a powerful approach for handling large-scale data retrieval in LLMs and RAG pipelines. Whether you choose pre-filtering or post-filtering—or a combination of both—depends on your application's specific requirements. As vector databases continue to evolve, future innovations that combine these two approaches more seamlessly will help improve data relevance and retrieval efficiency further.
+## Sounds interesting?
+If this sounds interesting and you’d like to work with us on these exciting projects, please reach out at jobs@mykin.ai!
