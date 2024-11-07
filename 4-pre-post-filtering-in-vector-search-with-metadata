@@ -1,97 +1,88 @@
-# Pre and Post Filtering in Vector Search with Metadata and RAG Pipelines
-At [kin](mykin.ai) we combine vector search with metadata queries for sophisticated RAG pipelines in AI agent. 
+# Pre- and Post-Filtering in Vector Search with Metadata and RAG Pipelines
 
-In the modern world of AI, managing vast amounts of data while keeping it relevant and accessible is a significant challenge, mainly when dealing with large language models (LLMs) and vector databases. One approach that has gained prominence in recent years is integrating vector search with metadata, especially in retrieval-augmented generation (RAG) pipelines. Vector search and metadata enable faster and more accurate data retrieval. However, the process of pre- and post-search filtering results plays a crucial role in ensuring data relevance.
+At [Kin](https://mykin.ai), we combine vector search with metadata queries to create sophisticated RAG (retrieval-augmented generation) pipelines in our AI agents.
 
-## The Vector Search and Metadata Challenge
+In today’s AI-driven world, managing vast amounts of data while keeping it relevant and accessible is a significant challenge, especially when working with large language models (LLMs) and vector databases. Integrating vector search with metadata has become an effective approach, especially in RAG pipelines, as it enables faster and more accurate data retrieval. However, applying pre- and post-search filtering is crucial to ensure data relevance.
 
-In a typical vector search, you create embeddings from chunks of text, such as a PDF document. These embeddings allow the system to search for similar items and retrieve them based on relevance. The challenge, however, arises when you need to combine vector search results with structured metadata. For example, you may have timestamped text-based content and want to retrieve the most relevant content within a specific date range. This is where metadata becomes critical in refining search results.
+## The Challenge of Vector Search with Metadata
 
-Unfortunately, most vector databases treat metadata as a secondary feature, isolating it from the primary vector search process. As a result, handling queries that combine vectors and metadata can become a challenge, particularly when the search needs to account for a dynamic range of filters, such as dates or other structured data.
+In a typical vector search, embeddings are created from text chunks, like those in a PDF document, to enable the retrieval of similar items based on relevance. The challenge arises when vector search results need to be combined with structured metadata. For example, timestamped text-based content might require retrieving the most relevant data within a specific date range. Here, metadata is essential for refining search results.
 
-## LibSQL and vector search metadata
+Unfortunately, most vector databases treat metadata as secondary, separate from the primary vector search process. Consequently, handling queries that combine vectors and metadata can be challenging, especially when incorporating dynamic filters, such as date ranges or other structured data.
 
-LibSQL is a more general-purpose SQLite-based database that adds vector capabilities to regular data. Vectors are presented as blob columns of regular tables. It makes vector embeddings and metadata a first-class citizen that naturally builds deep integration of these data points.
+## LibSQL and Vector Search with Metadata
 
-```
-  create table if not exists conversation (
-    id varchar(36) primary key not null,
-    startDate real,
-    endDate real,
-    summary text,
+LibSQL, a more general-purpose SQLite-based database, adds vector capabilities to traditional data, with vectors stored as blob columns in standard tables. This setup makes vector embeddings and metadata first-class citizens, enabling deep integration of these data points.
+
+```sql
+  CREATE TABLE IF NOT EXISTS conversation (
+    id VARCHAR(36) PRIMARY KEY NOT NULL,
+    startDate REAL,
+    endDate REAL,
+    summary TEXT,
     vectorSummary F32_BLOB(512)
    );
 ```
 
-It solves the challenge of metadata and vector search and eliminates impedance between vector data and regular structured data points in the same storage.
+With LibSQL, metadata and vector search challenges are resolved, bridging the gap between vector data and regular structured data in the same storage, as seen in the example query below:
 
-As you can see, you can access vector-like data and start date in the same query.
-
-```
-select c.id ,c.startDate, c.endDate, c.summary, vector_distance_cos(c.vectorSummary, vector(${vector})) distance
-      from conversation
-      where
-      ${startDate ? `and c.startDate >= ${startDate.getTime()}` : ''}
-      ${endDate ? `and c.endDate <= ${endDate.getTime()}` : ''}
-      ${distance ? `and distance <= ${distance}` : ''}
-      order by distance
-      limit ${top};
+```sql
+SELECT c.id, c.startDate, c.endDate, c.summary, vector_distance_cos(c.vectorSummary, vector(${vector})) AS distance
+FROM conversation c
+WHERE
+  ${startDate ? `AND c.startDate >= ${startDate.getTime()}` : ''}
+  ${endDate ? `AND c.endDate <= ${endDate.getTime()}` : ''}
+  ${distance ? `AND distance <= ${distance}` : ''}
+ORDER BY distance
+LIMIT ${top};
 ```
 
-**vector\_distance\_cos** calculated as distance allows us to make a primitive vector search that does a full scan and calculates distances on rows. We could optimize it with CTE and limit search and distance calculations to a much smaller subset of data.
+The **vector_distance_cos** function calculates distance, allowing basic vector searches to perform a full scan and calculate distances. This approach can be optimized with common table expressions (CTEs) to limit search and distance calculations to a smaller data subset.
 
-This approach could be calculation intensive and fail on large amounts of data.
+For more efficient searches, LibSQL offers FlashDiskANN vector indexing:
 
-Libsql offers a way more effective vector search based on FlashDiskANN vector indexed.
-
-```
-vector_top_k('idx_conversation_vectorSummary', ${vector} , ${top}) i
+```sql
+vector_top_k('idx_conversation_vectorSummary', ${vector}, ${top}) AS i
 ```
 
-**vector\_top\_k** is a table function that searches for the top of the newly created vector search index. As you can see, we could use only vector as a function parameter, and other columns could be used outside of the table function. So, to use a vector index together with different columns, we need to apply some strategies.
-
-Now we get a classical problem of integration vector search results with metadata queries.
+Here, **vector_top_k** is a table function that searches using the new vector search index. Only vector data is required as a parameter, while other columns can be filtered outside the table function.
 
 ## Post-Filtering: A Common Approach
 
-The most widely adopted method in these pipelines is **post-filtering**. In this approach, the system first retrieves data based on vector similarities and then applies metadata filters. For example, imagine you’re conducting a vector search to retrieve conversations relevant to a specific question. Still, you also want to ensure these conversations occurred in the past week.
+The most common approach in these pipelines is **post-filtering**, where data is retrieved based on vector similarity and then filtered by metadata. For instance, you might search for conversations relevant to a specific question and also want to ensure they occurred in the past week.
 
 ![](https://miro.medium.com/v2/resize:fit:1400/1*WFR7oJIwYflxiUivSrm-5g.png)
 
-Post-filtering allows the system to retrieve the most relevant vector-based results and subsequently filter out any that don’t meet the metadata criteria, such as date range. This method is efficient when vector similarity is the primary factor driving the search, and metadata is only applied as a secondary filter.
+Post-filtering retrieves the most relevant vector-based results, then excludes any that don’t meet the metadata criteria, such as a specific date range. This is efficient when vector similarity drives the search, with metadata as a secondary filter.
 
+```sql
+const sqlQuery = `
+  SELECT c.id, c.startDate, c.endDate, c.summary, vector_distance_cos(c.vectorSummary, vector(${vector})) AS distance
+  FROM vector_top_k('idx_conversation_vectorSummary', ${vector}, ${top}) AS i
+  INNER JOIN conversation c ON i.id = c.rowid
+  WHERE
+    ${startDate ? `AND c.startDate >= ${startDate.getTime()}` : ''}
+    ${endDate ? `AND c.endDate <= ${endDate.getTime()}` : ''}
+    ${distance ? `AND distance <= ${distance}` : ''}
+  ORDER BY distance
+  LIMIT ${top};
 ```
-    const sqlQuery = `
-      select c.id ,c.startDate, c.endDate, c.summary, vector_distance_cos(c.vectorSummary, vector(${vector})) distance
-      from  vector_top_k('idx_conversation_vectorSummary', ${vector} , ${top}) i
-      inner join conversation c on i.id = c.rowid
-      where 
-      ${startDate ? `and c.startDate >= ${startDate.getTime()}` : ''}
-      ${endDate ? `and c.endDate <= ${endDate.getTime()}` : ''}
-      ${distance ? `and distance <= ${distance}` : ''}
-      order by distance
-      limit ${top};
-```
 
-However, there are some limitations. For example, the initial vector search may yield fewer results or omit some relevant data before applying the metadata filter. If the search window is narrow enough, this can lead to complete results.
-
-One working strategy is to make the top value in vector\_top\_K much bigger. Be careful, though, as the function's default max number of results is around 200 rows.
+One limitation is that the initial vector search might return too few results or omit relevant data before the metadata filter is applied. A common strategy is to set a larger **top** value in **vector_top_k**, but note that the default max result count is around 200 rows.
 
 ## Pre-Filtering: A More Complex Approach
 
-Pre-filtering is a more intricate approach but can be more effective in some instances. In pre-filtering, metadata is used as the primary filter before vector search takes place. This means that only data that meets the metadata criteria is passed into the vector search process, limiting the scope of the search right from the beginning.
-
-While this approach can significantly reduce the amount of irrelevant data in the final results, it comes with its own challenges. For example, pre-filtering requires a deeper understanding of the data structure and may necessitate denormalizing the data or creating separate pre-filtered tables. This can be resource-intensive and, in some cases, impractical for dynamic metadata like date ranges.
+**Pre-filtering** uses metadata as the primary filter before vector search, passing only data that meets metadata criteria into the vector search process. This approach can reduce irrelevant data in the final results but may require denormalizing data or creating separate pre-filtered tables, which can be resource-intensive.
 
 ![](https://miro.medium.com/v2/resize:fit:1400/1*TioR1ETZ2S_FxvW6rZx9nw.png)
 
-In certain use cases, pre-filtering might outperform post-filtering. For instance, when the metadata (e.g., specific date ranges) is the most important filter, pre-filtering ensures the search is conducted only on the most relevant data.
+In cases where metadata, such as date ranges, is the most critical filter, pre-filtering ensures searches are conducted only on relevant data.
 
-## Pre-filtering with distance-based filtering
+## Pre-Filtering with Distance-Based Filtering
 
-So, we are getting back to an old concept. We do prefiltering instead of using a vector index.
+Returning to a traditional concept, **pre-filtering** without vector indexing can still be effective:
 
-```
+```sql
 WITH FilteredDates AS (
     SELECT 
         c.id, 
@@ -132,20 +123,22 @@ ORDER BY
 LIMIT ${top};
 ```
 
-It makes sense if the filter produces small data and distance calculation happens on the smaller data set.
+This approach is effective if the initial filter results in a small dataset, as distance calculations are then performed on a limited dataset.
 
 ![](https://miro.medium.com/v2/resize:fit:1400/1*NewbEonzeEgS7qPOZRgXwg.png)
 
-As a pro of this approach, you have full control over the data and get all results without omitting some typical values for extensive index searches.
+This method allows for full data control without omitting typical values in extensive index searches.
 
-## Choosing Between Pre and Post-Filtering
+## Choosing Between Pre- and Post-Filtering
 
-Both pre-filtering and post-filtering have their advantages and disadvantages. Post-filtering is more accessible to implement, especially when vector similarity is the primary search factor, but it can lead to incomplete results. Pre-filtering, on the other hand, can yield more accurate results but requires more complex data handling and optimization.
+Both pre- and post-filtering have unique advantages. Post-filtering is simpler to implement when vector similarity is the primary criterion but can lead to incomplete results. Pre-filtering offers more precise results but requires complex data handling and optimization.
 
-In practice, many systems combine both strategies, depending on the query. For example, they might start with a broad pre-filtering based on metadata (like date ranges) and then apply a more targeted vector search with post-filtering to refine the results further.
+Many systems combine both strategies depending on the query—beginning with a broad pre-filter based on metadata (like date ranges), followed by post-filtering to refine the results further.
 
-## **Conclusion**
+## Conclusion
 
-Vector search with metadata filtering offers a powerful approach for handling large-scale data retrieval in LLMs and RAG pipelines. Whether you choose pre-filtering or post-filtering—or a combination of both—depends on your application's specific requirements. As vector databases continue to evolve, future innovations that combine these two approaches more seamlessly will help improve data relevance and retrieval efficiency further.
-## Sounds interesting?
-If this sounds interesting and you’d like to work with us on these exciting projects, please reach out at jobs@mykin.ai!
+Vector search with metadata filtering is a powerful tool for handling large-scale data retrieval in LLMs and RAG pipelines. Whether you choose pre-filtering, post-filtering, or a hybrid approach depends on your specific requirements. As vector databases evolve, we anticipate innovations that will combine these methods more seamlessly, enhancing data relevance and retrieval efficiency.
+
+## Interested?
+
+If this sounds interesting and you’d like to work on these exciting projects, please reach out at jobs@mykin.ai!
